@@ -28,7 +28,7 @@ int main()
 
     // bat
     auto bat = registry.create();
-    registry.emplace<Bat>(bat,5.0f);
+    registry.emplace<Bat>(bat,10.0f);
     registry.emplace<Size>(bat, 50.0f, 5.0f);
     registry.emplace<Position>(bat, windowWidth / 2.0f, windowHeight - 20.0f);
 
@@ -38,6 +38,8 @@ int main()
     registry.emplace<Size>(ball,5.0f,5.0f);
     registry.emplace<Position>(ball, windowWidth / 2.0f, 1.0f);
     registry.emplace<FixedVelocityBody>(ball,5.0f,5.0f); 
+
+    // bricks
 
     // font for hud
 
@@ -65,12 +67,13 @@ int main()
         // move bat
         registry.view<Bat,Position,Size>().each([&](auto entity, Bat& bat, Position& pos, Size& size) {
 
-            if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left))
+            sf::FloatRect rect(sf::Vector2f(pos.x, pos.y), sf::Vector2f(size.width, size.height));
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left) && rect.left > 0)
             {
                 // move left...
                 pos.x -= bat.speed;
             }
-            else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right))
+            else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right) && rect.left+rect.width < windowWidth)
             {
                 // move right...
                 pos.x += bat.speed;
