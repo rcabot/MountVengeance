@@ -9,10 +9,11 @@
 #include <SFML/Graphics.hpp>
 
 struct Bat { float speed; };
+struct Ball {};
+struct Brick { int breakState = 1; };
 struct Size { float width, height; };
 struct Position { float x, y; };
 struct FixedVelocityBody { float xVelocity, yVelocity; };
-struct Ball {};
 
 int main()
 {
@@ -36,10 +37,23 @@ int main()
     auto ball = registry.create();
     registry.emplace<Ball>(ball);
     registry.emplace<Size>(ball,5.0f,5.0f);
-    registry.emplace<Position>(ball, windowWidth / 2.0f, 1.0f);
+    registry.emplace<Position>(ball, windowWidth / 2.0f, windowHeight / 2.0f);
     registry.emplace<FixedVelocityBody>(ball,5.0f,5.0f); 
 
     // bricks
+    const float bricksSizeX = 40.0f;
+    const float bricksSizeY = 10.0f;
+    const float spacing = 5.0f;
+    for (float x = bricksSizeX; x < windowWidth-bricksSizeX; x += bricksSizeX+spacing)
+    {
+        for (float y = bricksSizeY; y < windowHeight/2.0f; y += bricksSizeY+spacing)
+        {
+            auto brick = registry.create();
+            registry.emplace<Brick>(brick);
+            registry.emplace<Size>(brick, bricksSizeX, bricksSizeY);
+            registry.emplace<Position>(brick, x, y);
+        }
+    }
 
     // font for hud
 
@@ -123,9 +137,29 @@ int main()
                 pos.y -= (vel.yVelocity * 2);
                 vel.yVelocity *= -1;
             }
+
+            // Has the ball hit any brick?
+
+            registry.view<Brick, Size, Position>().each([&](auto entity, Brick& b, Size& brickSize, Position& brickPosition) {
+
+                sf::FloatRect brickRect(sf::Vector2f(brickPosition.x, brickPosition.y), sf::Vector2f(brickSize.width, brickSize.height));
+                if (rect.intersects(brickRect))
+                {
+                    // Hit detected so reverse the ball
+                    pos.y -= (vel.yVelocity * 2);
+                    vel.yVelocity *= -1;
+                    b.breakState--;
+                }
+            });
         });
         
-
+        // destroy bricks!
+        registry.view<Brick>().each([&](auto entity, Brick& b) {
+            if (b.breakState < 1) {
+                // entt does allow destruction within loop (but only current entity)
+                registry.destroy(entity);
+            }
+        });
 
 
         // Update the HUD text
