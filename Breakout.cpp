@@ -5,8 +5,10 @@
 // These "include" code from the C++ library and SFML too
 #include <sstream>
 #include <iostream>
+#include <math.h> 
 #include <entt/entity/registry.hpp>
 #include <SFML/Graphics.hpp>
+#define PI 3.14159265f
 
 struct Bat { float speed; };
 struct Ball {};
@@ -14,6 +16,19 @@ struct Brick { int breakState = 1; };
 struct Size { float width, height; };
 struct Position { float x, y; };
 struct FixedVelocityBody { float xVelocity, yVelocity; };
+
+float InvLerp(float a, float b, float v) {
+    return (v - a) / (b - a);
+}
+
+float Lerp(float a, float b, float t) {
+    return (1.0f - t) * a + b * t;
+}
+
+float Remap(float iMin, float iMax, float oMin, float oMax, float v) {
+    float t = InvLerp(iMin, iMax, v);
+    return Lerp(oMin, oMax, t);
+}
 
 int main()
 {
@@ -30,15 +45,19 @@ int main()
     // bat
     auto bat = registry.create();
     registry.emplace<Bat>(bat,10.0f);
-    registry.emplace<Size>(bat, 50.0f, 5.0f);
+    registry.emplace<Size>(bat, 250.0f, 5.0f);
     registry.emplace<Position>(bat, windowWidth / 2.0f, windowHeight - 20.0f);
 
-    // ball
-    auto ball = registry.create();
-    registry.emplace<Ball>(ball);
-    registry.emplace<Size>(ball,5.0f,5.0f);
-    registry.emplace<Position>(ball, windowWidth / 2.0f, windowHeight / 2.0f);
-    registry.emplace<FixedVelocityBody>(ball,5.0f,5.0f); 
+    // balls
+    const int startingBalls = 3;
+    for (int i = 0; i < startingBalls; i++)
+    {
+        auto ball = registry.create();
+        registry.emplace<Ball>(ball);
+        registry.emplace<Size>(ball, 5.0f, 5.0f);
+        registry.emplace<Position>(ball, i * 50.0f + windowWidth / 2.0f, windowHeight / 2.0f);
+        registry.emplace<FixedVelocityBody>(ball, 5.0f, 5.0f);
+    }
 
     // bricks
     const float bricksSizeX = 40.0f;
@@ -134,8 +153,18 @@ int main()
             if (rect.intersects(batRect))
             {
                 // Hit detected so reverse the ball
-                pos.y -= (vel.yVelocity * 2);
+                pos.y -= (vel.yVelocity * 3);
                 vel.yVelocity *= -1;
+
+                // alter the angle of the ball trajectory depending on the position on the bat
+                float speed = hypot(vel.xVelocity, vel.yVelocity);
+                float angle = Remap(batRect.left,batRect.left+batRect.width,PI/8.0f, PI*7.0f/8.0f,rect.left-rect.width/2.0f);
+                float newXVelocity = -cos(-angle);
+                float newYVelocity = sin(-angle);
+                
+                bool negativeY = vel.yVelocity < 0;
+                vel.yVelocity = negativeY ? newYVelocity * speed : -newYVelocity * speed;
+                vel.xVelocity = newXVelocity * speed;
             }
 
             // Has the ball hit any brick?
