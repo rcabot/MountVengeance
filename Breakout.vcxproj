@@ -167,16 +167,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="BatMover.cpp" />
-    <ClCompile Include="Entities\Ball.cpp" />
-    <ClCompile Include="Entities\Bat.cpp" />
     <ClCompile Include="Breakout.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="BatMover.h" />
     <ClInclude Include="Breakout.h" />
-    <ClInclude Include="Entities\Ball.h" />
-    <ClInclude Include="Entities\Bat.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

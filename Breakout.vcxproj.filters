@@ -18,27 +18,9 @@
     <ClCompile Include="Breakout.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Entities\Bat.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Entities\Ball.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="BatMover.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Entities\Bat.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Entities\Ball.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Breakout.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="BatMover.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
