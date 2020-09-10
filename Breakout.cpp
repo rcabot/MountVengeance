@@ -91,7 +91,8 @@ sf::FloatRect reverseRectUntilNonIntersecting(const FixedSpeedBody& b,
 }
 
 float SweptAABB(
-    const FixedSpeedBody& vel, 
+    float vx,
+    float vy, 
     const sf::FloatRect b1, 
     const sf::FloatRect b2, 
     float& normalx, 
@@ -100,7 +101,7 @@ float SweptAABB(
     float xInvExit, yInvExit;
 
     // find the distance between the objects on the near and far sides for both x and y 
-    if (vel.xVelocity > 0.0f)
+    if (vx > 0.0f)
     {
         xInvEntry = b2.left - (b1.left + b1.width);
         xInvExit = (b2.left + b2.width) - b1.left;
@@ -111,7 +112,7 @@ float SweptAABB(
         xInvExit = b2.left - (b1.left + b1.width);
     }
 
-    if (vel.yVelocity > 0.0f)
+    if (vy > 0.0f)
     {
         yInvEntry = b2.top - (b1.top + b1.height);
         yInvExit = (b2.top + b2.height) - b1.top;
@@ -127,26 +128,26 @@ float SweptAABB(
 	float xEntry, yEntry;
 	float xExit, yExit;
 
-	if (vel.xVelocity == 0.0f)
+	if (vx == 0.0f)
 	{
 		xEntry = -std::numeric_limits<float>::infinity();
 		xExit = std::numeric_limits<float>::infinity();
 	}
 	else
 	{
-		xEntry = xInvEntry / vel.xVelocity;
-		xExit = xInvExit / vel.xVelocity;
+		xEntry = xInvEntry / vx;
+		xExit = xInvExit / vx;
 	}
 
-	if (vel.yVelocity == 0.0f)
+	if (vy == 0.0f)
 	{
 		yEntry = -std::numeric_limits<float>::infinity();
 		yExit = std::numeric_limits<float>::infinity();
 	}
 	else
 	{
-		yEntry = yInvEntry / vel.yVelocity;
-		yExit = yInvExit / vel.yVelocity;
+		yEntry = yInvEntry / vy;
+		yExit = yInvExit / vy;
 	}
     
     // find the earliest/latest times of collision
@@ -193,18 +194,18 @@ float SweptAABB(
     return entryTime;
 }
 
-sf::FloatRect GetSweptBroadphaseBox(const sf::FloatRect& b, const FixedSpeedBody& body)
+sf::FloatRect GetSweptBroadphaseBox(const sf::FloatRect& b, const float vx, const float vy)
 {
     sf::FloatRect broadphasebox;
-	broadphasebox.left = body.xVelocity > 0 ? b.left : b.left + body.xVelocity;
-	broadphasebox.top = body.yVelocity > 0 ? b.top : b.top + body.yVelocity;
-	broadphasebox.width = body.xVelocity > 0 ? body.xVelocity + b.width : b.width - body.xVelocity;
-	broadphasebox.height = body.yVelocity > 0 ? body.yVelocity + b.height : b.height - body.yVelocity;
+	broadphasebox.left = vx > 0 ? b.left : b.left + vx;
+	broadphasebox.top = vy > 0 ? b.top : b.top + vy;
+	broadphasebox.width = vx > 0 ? vx + b.width : b.width - vx;
+	broadphasebox.height = vy > 0 ? vy + b.height : b.height - vy;
 
 	return broadphasebox;
 }
 
-void updatePhysics(entt::registry& registry, const int windowHeight, const int windowWidth)
+void updatePhysics(entt::registry& registry, const int windowHeight, const int windowWidth, const float delta)
 {
 	auto bodyView = registry.view<FixedSpeedBody, Position, Size>();
 	auto brickView = registry.view<Brick, Size, Position>();
@@ -214,9 +215,10 @@ void updatePhysics(entt::registry& registry, const int windowHeight, const int w
 		auto& vel = bodyView.get<FixedSpeedBody>(bodyEntity);
 		auto& pos = bodyView.get<Position>(bodyEntity);
 		auto& size = bodyView.get<Size>(bodyEntity);
+        
 
 		sf::FloatRect rect(sf::Vector2f(pos.x, pos.y), sf::Vector2f(size.width, size.height));
-		sf::FloatRect broadphasebox = GetSweptBroadphaseBox(rect,vel);
+		sf::FloatRect broadphasebox = GetSweptBroadphaseBox(rect,vel.xVelocity*delta,vel.yVelocity * delta);
 		
         for (auto batEntity : batView) {
 
@@ -228,12 +230,12 @@ void updatePhysics(entt::registry& registry, const int windowHeight, const int w
 			{
                 // Hit detected so reverse the ball
 				float normalx, normaly;
-				float collisiontime = SweptAABB(vel, rect, batRect, normalx, normaly);
+				float collisiontime = SweptAABB(vel.xVelocity * delta, vel.yVelocity * delta, rect, batRect, normalx, normaly);
 
 				if (normalx == 0.0f && normaly == 0.0f) continue;
 
-				pos.x += vel.xVelocity * collisiontime;
-				pos.y += vel.yVelocity * collisiontime;
+				pos.x += vel.xVelocity * collisiontime * delta;
+				pos.y += vel.yVelocity * collisiontime * delta;
 				float remainingtime = 1.0f - collisiontime;
 
 				if (abs(normalx) > 0.0001f) vel.xVelocity *= -1;
@@ -249,8 +251,9 @@ void updatePhysics(entt::registry& registry, const int windowHeight, const int w
 				vel.yVelocity = negativeY ? newYVelocity * speed : -newYVelocity * speed;
 				vel.xVelocity = newXVelocity * speed;
 
-				pos.x += vel.xVelocity * remainingtime;
-				pos.y += vel.yVelocity * remainingtime;
+				pos.x += vel.xVelocity * remainingtime * delta;
+				pos.y += vel.yVelocity * remainingtime * delta;
+                return;
 			}
         }
 
@@ -267,47 +270,47 @@ void updatePhysics(entt::registry& registry, const int windowHeight, const int w
 			{
 				// Hit detected so reverse the ball
 				float normalx, normaly;
-				float collisiontime = SweptAABB(vel, rect,brickRect, normalx, normaly);
+				float collisiontime = SweptAABB(vel.xVelocity * delta, vel.yVelocity * delta, rect,brickRect, normalx, normaly);
 
                 if (normalx == 0.0f && normaly == 0.0f) continue;
 
-				pos.x += vel.xVelocity * collisiontime;
-				pos.y += vel.yVelocity * collisiontime;
+				pos.x += vel.xVelocity * collisiontime * delta;
+				pos.y += vel.yVelocity * collisiontime * delta;
 				float remainingtime = 1.0f - collisiontime;
 
 				if (abs(normalx) > 0.0001f) vel.xVelocity *= -1;
 				if (abs(normaly) > 0.0001f) vel.yVelocity *= -1;
 
-				pos.x += vel.xVelocity * remainingtime;
-				pos.y += vel.yVelocity * remainingtime;
+				pos.x += vel.xVelocity * remainingtime * delta;
+				pos.y += vel.yVelocity * remainingtime * delta;
 
 				b.breakState--;
                 return;
 			}
         }
 
-		pos.x += vel.xVelocity;
-		pos.y += vel.yVelocity;
+		pos.x += vel.xVelocity * delta;
+		pos.y += vel.yVelocity * delta;
 
 		// Handle ball hitting the bottom
 		if (rect.top > windowHeight)
 		{
 			// reverse the ball direction
-			pos.y -= (vel.yVelocity * 2);
+			pos.y -= (vel.yVelocity * 2 * delta);
 			vel.yVelocity *= -1;
 		}
 
 		// Handle ball hitting top
 		if (rect.top < 0)
 		{
-			pos.y -= (vel.yVelocity * 2);
+			pos.y -= (vel.yVelocity * 2 * delta);
 			vel.yVelocity *= -1;
 		}
 
 		// Handle ball hitting sides
 		if (rect.left < 0 || rect.left + size.width > windowWidth)
 		{
-			pos.x -= (vel.xVelocity * 2);
+			pos.x -= (vel.xVelocity * 2 * delta);
 			vel.xVelocity *= -1;
 		}
     }
@@ -348,7 +351,7 @@ int main()
     int lives = 3;
 
     // bat
-    auto bat = makeBat(registry,windowWidth / 2.0f, windowHeight - 20.0f);
+    auto bat = makeBat(registry,windowWidth / 2.0f, windowHeight - 100.0f);
 
     // balls
     const int startingBalls = 3;
@@ -358,18 +361,30 @@ int main()
     }
 
 	// bricks
-	const float bricksSizeX = 100.0f;
+	const float bricksSizeX = 70.0f;
 	const float bricksSizeY = 30.0f;
-	const float spacing = 0.0f;
-	const float startX = bricksSizeX, startY = bricksSizeY;
-	const float endX = windowWidth - bricksSizeX, endY = windowHeight / 2.0f;
-    for (float x = startX; x < endX; x += bricksSizeX+spacing)
+	const float spacing = 5.0f;
+	const float brickstartX = bricksSizeX, brickstartY = bricksSizeY;
+	const float birckendX = windowWidth - bricksSizeX, brickendY = windowHeight / 2.0f;
+    for (float x = brickstartX; x < birckendX; x += bricksSizeX+spacing)
     {
-        for (float y = startY; y < endY; y += bricksSizeY+spacing)
+        for (float y = brickstartY; y < brickendY; y += bricksSizeY+spacing)
         {
             makeBrick(registry, bricksSizeX, bricksSizeY, x, y);
         }
     }
+
+    // houses
+	const float houseSizeX = 50.0f;
+	const float houseSizeY = 50.0f;
+	const float housespacing = 10.0f;
+	const float housestartX = houseSizeX;
+	const float houseendX = windowWidth - houseSizeX;
+	const float houseY = windowHeight - houseSizeY;
+	for (float x = brickstartX; x < birckendX; x += bricksSizeX + housespacing)
+	{
+		makeBrick(registry, houseSizeX, houseSizeY, x, houseY);
+	}
 
     // font for hud
 
@@ -398,7 +413,11 @@ int main()
         moveBat(registry, windowWidth);
 
         // handle fixed velocity bodies
-        updatePhysics(registry, windowHeight, windowWidth);
+        const int collisionInterval = 5;
+        for (float i = 0; i < collisionInterval; i++)
+		{
+			updatePhysics(registry, windowHeight, windowWidth, 1.0f / collisionInterval);
+        }
         
         // destroy bricks!
         removeDestroyedBricks(registry);
