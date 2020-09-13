@@ -219,7 +219,14 @@ void updatePhysics(entt::registry& registry, const int windowHeight, const int w
 
 		sf::FloatRect rect(sf::Vector2f(pos.x, pos.y), sf::Vector2f(size.width, size.height));
 		sf::FloatRect broadphasebox = GetSweptBroadphaseBox(rect,vel.xVelocity*delta,vel.yVelocity * delta);
-		
+
+        float shortestCollisionTime = 2.0f;
+		bool collided = false;
+		float bestnormalx, bestnormaly;
+		Brick* collidedBrick = nullptr;
+		Bat* collidedBat = nullptr;
+		sf::FloatRect collidedBatRect;
+
         for (auto batEntity : batView) {
 
 			auto& batPosition = batView.get<Position>(batEntity);
@@ -234,28 +241,17 @@ void updatePhysics(entt::registry& registry, const int windowHeight, const int w
 
 				if (normalx == 0.0f && normaly == 0.0f) continue;
 
-				pos.x += vel.xVelocity * collisiontime * delta;
-				pos.y += vel.yVelocity * collisiontime * delta;
-				float remainingtime = 1.0f - collisiontime;
-
-				if (abs(normalx) > 0.0001f) vel.xVelocity *= -1;
-				if (abs(normaly) > 0.0001f) vel.yVelocity *= -1;
-
-
-				// alter the angle of the ball trajectory depending on the position on the bat
-				float speed = hypot(vel.xVelocity, vel.yVelocity);
-				float angle = Remap(batRect.left, batRect.left + batRect.width, PI / 8.0f, PI * 7.0f / 8.0f, rect.left - rect.width / 2.0f);
-				float newXVelocity = -cos(-angle);
-				float newYVelocity = sin(-angle);
-				bool negativeY = vel.yVelocity < 0;
-				vel.yVelocity = negativeY ? newYVelocity * speed : -newYVelocity * speed;
-				vel.xVelocity = newXVelocity * speed;
-
-				pos.x += vel.xVelocity * remainingtime * delta;
-				pos.y += vel.yVelocity * remainingtime * delta;
-                return;
+				if (collisiontime < shortestCollisionTime) {
+					shortestCollisionTime = collisiontime;
+					collided = true;
+					bestnormalx = normalx;
+					bestnormaly = normaly;
+					collidedBat = &batView.get<Bat>(batEntity);
+					collidedBatRect = batRect;
+				}
 			}
         }
+
 
 		// Has the ball hit any brick?
         for (auto brickEntity : brickView) {
@@ -274,21 +270,52 @@ void updatePhysics(entt::registry& registry, const int windowHeight, const int w
 
                 if (normalx == 0.0f && normaly == 0.0f) continue;
 
-				pos.x += vel.xVelocity * collisiontime * delta;
-				pos.y += vel.yVelocity * collisiontime * delta;
-				float remainingtime = 1.0f - collisiontime;
+				if (collisiontime < shortestCollisionTime) {
+					shortestCollisionTime = collisiontime;
+                    collided = true;
+                    bestnormalx = normalx;
+                    bestnormaly = normaly;
+                    collidedBrick = &b;
+				}
 
-				if (abs(normalx) > 0.0001f) vel.xVelocity *= -1;
-				if (abs(normaly) > 0.0001f) vel.yVelocity *= -1;
-
-				pos.x += vel.xVelocity * remainingtime * delta;
-				pos.y += vel.yVelocity * remainingtime * delta;
-
-				b.breakState--;
-                return;
+				
 			}
         }
 
+		if (collided) {
+			//move ball up to collision point
+			pos.x += vel.xVelocity * shortestCollisionTime * delta;
+			pos.y += vel.yVelocity * shortestCollisionTime * delta;
+			float remainingtime = 1.0f - shortestCollisionTime;
+
+			// implement collision response
+			if (abs(bestnormalx) > 0.0001f) vel.xVelocity *= -1;
+			if (abs(bestnormaly) > 0.0001f) vel.yVelocity *= -1;
+
+
+			if (collidedBat != nullptr) {
+
+				// alter the angle of the ball trajectory depending on the position on the bat
+				float speed = hypot(vel.xVelocity, vel.yVelocity);
+				float angle = Remap(collidedBatRect.left, collidedBatRect.left + collidedBatRect.width, PI / 8.0f, PI * 7.0f / 8.0f, rect.left - rect.width / 2.0f);
+				float newXVelocity = -cos(-angle);
+				float newYVelocity = sin(-angle);
+				bool negativeY = vel.yVelocity < 0;
+				vel.yVelocity = negativeY ? newYVelocity * speed : -newYVelocity * speed;
+				vel.xVelocity = newXVelocity * speed;
+
+			}
+
+			// apply remaining movement
+			pos.x += vel.xVelocity * remainingtime * delta;
+			pos.y += vel.yVelocity * remainingtime * delta;
+
+            if(collidedBrick!=nullptr) collidedBrick->breakState--;
+			return;
+        }
+
+
+        // no entity collisions, so move the ball!
 		pos.x += vel.xVelocity * delta;
 		pos.y += vel.yVelocity * delta;
 
@@ -354,7 +381,7 @@ int main()
     auto bat = makeBat(registry,windowWidth / 2.0f, windowHeight - 100.0f);
 
     // balls
-    const int startingBalls = 3;
+    const int startingBalls = 2;
     for (int i = 0; i < startingBalls; i++)
     {
         makeBall(registry, i * 50.0f + windowWidth / 2.0f, windowHeight / 2.0f,5.0f,5.0f);
@@ -363,7 +390,7 @@ int main()
 	// bricks
 	const float bricksSizeX = 70.0f;
 	const float bricksSizeY = 30.0f;
-	const float spacing = 5.0f;
+	const float spacing = 0.0f;
 	const float brickstartX = bricksSizeX, brickstartY = bricksSizeY;
 	const float birckendX = windowWidth - bricksSizeX, brickendY = windowHeight / 2.0f;
     for (float x = brickstartX; x < birckendX; x += bricksSizeX+spacing)
