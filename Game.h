@@ -33,7 +33,7 @@ namespace Game {
 
 		void updatePhysics(entt::registry& registry, const int windowHeight, const int windowWidth, const float delta);
 
-		void removeDestroyedBricks(entt::registry& registry);
+		void removeDestroyedBreakables(entt::registry& registry);
 
 		void render(entt::registry& registry, sf::RenderWindow& window);
 	};

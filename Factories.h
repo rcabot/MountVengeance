@@ -8,5 +8,5 @@ namespace Factory {
 
 	entt::entity makeBall(entt::registry& registry, const float posX, const float posY, const float initVelX, const float initVelY);
 
-	entt::entity makeBrick(entt::registry& registry, const float bricksSizeX, const float bricksSizeY, const float x, const float y);
+	entt::entity makeGoblin(entt::registry& registry, const float bricksSizeX, const float bricksSizeY, const float x, const float y);
 }

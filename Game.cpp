@@ -31,7 +31,7 @@ void Game::Game::run()
 	{
 		for (float y = brickstartY; y < brickendY; y += bricksSizeY + spacing)
 		{
-			Factory::makeBrick(registry, bricksSizeX, bricksSizeY, x, y);
+			Factory::makeGoblin(registry, bricksSizeX, bricksSizeY, x, y);
 		}
 	}
 
@@ -44,7 +44,7 @@ void Game::Game::run()
 	const float houseY = windowHeight - houseSizeY;
 	for (float x = brickstartX; x < birckendX; x += bricksSizeX + housespacing)
 	{
-		Factory::makeBrick(registry, houseSizeX, houseSizeY, x, houseY);
+		Factory::makeGoblin(registry, houseSizeX, houseSizeY, x, houseY);
 	}
 
 	// This "while" loop goes round and round- perhaps forever
@@ -76,11 +76,8 @@ void Game::Game::run()
 			updatePhysics(registry, windowHeight, windowWidth, 1.0f / collisionInterval);
 		}
 
-		// destroy bricks!
-		removeDestroyedBricks(registry);
-
-
-		// Update the HUD text
+		// destroy breakables!
+		removeDestroyedBreakables(registry);
 
 
 		// Clear everything from the last run of the while loop
@@ -100,7 +97,7 @@ void Game::Game::run()
 
 void Game::Game::moveBat(entt::registry& registry, const int windowWidth)
 {
-	registry.view<Component::Bat, Component::Position, Component::Size>().each([&](auto entity, Component::Bat& bat, Component::Position& pos, Component::Size& size) {
+	registry.view<Component::Bat, Component::Position, Component::BoxCollider>().each([&](auto entity, Component::Bat& bat, Component::Position& pos, Component::BoxCollider& size) {
 
 		sf::FloatRect rect(sf::Vector2f(pos.x, pos.y), sf::Vector2f(size.width, size.height));
 		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left) && rect.left > 0)
@@ -241,14 +238,13 @@ sf::FloatRect Game::Game::GetSweptBroadphaseBox(const sf::FloatRect& b, const fl
 void Game::Game::updatePhysics(entt::registry& registry, const int windowHeight, const int windowWidth, const float delta)
 
 {
-	auto bodyView = registry.view<Component::FixedSpeedBody, Component::Position, Component::Size>();
-	auto brickView = registry.view<Component::Brick, Component::Size, Component::Position>();
-	auto batView = registry.view<Component::Bat, Component::Position, Component::Size>();
+	auto bodyView = registry.view<Component::FixedSpeedBody, Component::Position, Component::BoxCollider>();
+	auto colliderView = registry.view<Component::BoxCollider>();
 	for (auto bodyEntity : bodyView) {
 
 		auto& vel = bodyView.get<Component::FixedSpeedBody>(bodyEntity);
 		auto& pos = bodyView.get<Component::Position>(bodyEntity);
-		auto& size = bodyView.get<Component::Size>(bodyEntity);
+		auto& size = bodyView.get<Component::BoxCollider>(bodyEntity);
 
 
 		sf::FloatRect rect(sf::Vector2f(pos.x, pos.y), sf::Vector2f(size.width, size.height));
@@ -257,15 +253,13 @@ void Game::Game::updatePhysics(entt::registry& registry, const int windowHeight,
 		float shortestCollisionTime = 2.0f;
 		bool collided = false;
 		float bestnormalx, bestnormaly;
-		Component::Brick* collidedBrick = nullptr;
-		Component::Bat* collidedBat = nullptr;
-		sf::FloatRect collidedBatRect;
+		entt::entity collidedEntity = entt::null;
 
-		for (auto batEntity : batView) {
-
-			auto& batPosition = batView.get<Component::Position>(batEntity);
-			auto& batSize = batView.get<Component::Size>(batEntity);
-			sf::FloatRect batRect(sf::Vector2f(batPosition.x, batPosition.y), sf::Vector2f(batSize.width, batSize.height));
+		for (auto colliderEntity : colliderView) {
+			if (registry.any<Component::FixedSpeedBody>(colliderEntity)) continue;
+			auto& colliderPosition = registry.get<Component::Position>(colliderEntity);
+			auto& collider = colliderView.get<Component::BoxCollider>(colliderEntity);
+			sf::FloatRect batRect(sf::Vector2f(colliderPosition.x, colliderPosition.y), sf::Vector2f(collider.width, collider.height));
 			// Has the ball hit the bat?
 			if (broadphasebox.intersects(batRect))
 			{
@@ -280,39 +274,8 @@ void Game::Game::updatePhysics(entt::registry& registry, const int windowHeight,
 					collided = true;
 					bestnormalx = normalx;
 					bestnormaly = normaly;
-					collidedBat = &batView.get<Component::Bat>(batEntity);
-					collidedBatRect = batRect;
+					collidedEntity = colliderEntity;
 				}
-			}
-		}
-
-
-		// Has the ball hit any brick?
-		for (auto brickEntity : brickView) {
-
-			auto& b = brickView.get<Component::Brick>(brickEntity);
-			auto& brickSize = brickView.get<Component::Size>(brickEntity);
-			auto& brickPosition = brickView.get<Component::Position>(brickEntity);
-
-			sf::FloatRect brickRect(sf::Vector2f(brickPosition.x, brickPosition.y), sf::Vector2f(brickSize.width, brickSize.height));
-
-			if (broadphasebox.intersects(brickRect))
-			{
-				// Hit detected so reverse the ball
-				float normalx, normaly;
-				float collisiontime = SweptAABB(vel.xVelocity * delta, vel.yVelocity * delta, rect, brickRect, normalx, normaly);
-
-				if (normalx == 0.0f && normaly == 0.0f) continue;
-
-				if (collisiontime < shortestCollisionTime) {
-					shortestCollisionTime = collisiontime;
-					collided = true;
-					bestnormalx = normalx;
-					bestnormaly = normaly;
-					collidedBrick = &b;
-				}
-
-
 			}
 		}
 
@@ -327,11 +290,14 @@ void Game::Game::updatePhysics(entt::registry& registry, const int windowHeight,
 			if (abs(bestnormaly) > 0.0001f) vel.yVelocity *= -1;
 
 
-			if (collidedBat != nullptr) {
+			if (collidedEntity != entt::null && registry.any<Component::Bat>(collidedEntity)) {
+				auto& batSize = registry.get<Component::BoxCollider>(collidedEntity);
+				auto& batPosition = registry.get<Component::Position>(collidedEntity);
+				sf::FloatRect batRect(sf::Vector2f(batPosition.x, batPosition.y), sf::Vector2f(batSize.width, batSize.height));
 
 				// alter the angle of the ball trajectory depending on the position on the bat
 				float speed = hypot(vel.xVelocity, vel.yVelocity);
-				float angle = Utils::Remap(collidedBatRect.left, collidedBatRect.left + collidedBatRect.width, PI / 8.0f, PI * 7.0f / 8.0f, rect.left - rect.width / 2.0f);
+				float angle = Utils::Remap(batRect.left, batRect.left + batRect.width, PI / 8.0f, PI * 7.0f / 8.0f, rect.left - rect.width / 2.0f);
 				float newXVelocity = -cos(-angle);
 				float newYVelocity = sin(-angle);
 				bool negativeY = vel.yVelocity < 0;
@@ -344,7 +310,10 @@ void Game::Game::updatePhysics(entt::registry& registry, const int windowHeight,
 			pos.x += vel.xVelocity * remainingtime * delta;
 			pos.y += vel.yVelocity * remainingtime * delta;
 
-			if (collidedBrick != nullptr) collidedBrick->breakState--;
+			if (collidedEntity != entt::null && registry.any<Component::Breakable>(collidedEntity)) {
+				auto& breakable = registry.get<Component::Breakable>(collidedEntity);
+				breakable.breakState--;
+			}
 			return;
 		}
 
@@ -379,21 +348,21 @@ void Game::Game::updatePhysics(entt::registry& registry, const int windowHeight,
 
 }
 
-void Game::Game::removeDestroyedBricks(entt::registry& registry)
+void Game::Game::removeDestroyedBreakables(entt::registry& registry)
 
 {
-	registry.view<Component::Brick>().each([&](auto entity, Component::Brick& b) {
+	registry.view<Component::Breakable>().each([&](auto entity, Component::Breakable& b) {
 		if (b.breakState < 1) {
 			// entt does allow destruction within loop (but only current entity)
 			registry.destroy(entity);
 		}
-		});
+	});
 }
 
 void Game::Game::render(entt::registry& registry, sf::RenderWindow& window)
 
 {
-	registry.view<Component::Size, Component::Position>().each([&](auto entity, Component::Size& size, Component::Position& pos) {
+	registry.view<Component::BoxCollider, Component::Position>().each([&](auto entity, Component::BoxCollider& size, Component::Position& pos) {
 		sf::RectangleShape shape;
 		shape.setPosition(pos.x, pos.y);
 		shape.setSize(sf::Vector2f(size.width, size.height));
