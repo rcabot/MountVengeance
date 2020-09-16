@@ -5,12 +5,42 @@
 #include <math.h> 
 #include <limits>
 #include <iostream>
+#include <chrono>
+#include <ctime>
 #define PI 3.14159265f
 
 void Game::Game::run()
 {
-	const int windowWidth = window.getSize().x;
-	const int windowHeight = window.getSize().y;
+	initialSetup();
+
+	double t = 0.0;
+	const double dt = 0.016;
+
+	auto currentTime = std::chrono::system_clock::now();
+	std::cout << currentTime.time_since_epoch().count() << "\n";
+	double accumulator = 0.0;
+
+	// This "while" loop goes round and round- perhaps forever
+	while (window.isOpen())
+	{
+		auto newTime = std::chrono::system_clock::now();
+		std::chrono::duration<double> frameTime = newTime - currentTime;
+		currentTime = newTime;
+		accumulator += frameTime.count();
+
+		while (accumulator >= dt) {
+			updateGameState();
+
+			accumulator -= dt;
+			t += dt;
+		}
+
+		renderAll();
+	}
+}
+
+void Game::Game::initialSetup()
+{
 	// bat
 	auto bat = Factory::makeBat(registry, windowWidth / 2.0f, windowHeight - 100.0f);
 
@@ -46,53 +76,53 @@ void Game::Game::run()
 	{
 		Factory::makeGoblin(registry, houseSizeX, houseSizeY, x, houseY);
 	}
+}
 
-	// This "while" loop goes round and round- perhaps forever
-	while (window.isOpen())
+void Game::Game::renderAll()
+{
+	// Clear everything from the last run of the while loop
+	window.clear();
+
+	// Draw our game scene here
+	drawSceneObjects(registry, window);
+
+
+	// Draw our score
+
+
+	// Show everything we just drew
+	window.display();
+}
+
+void Game::Game::updateGameState()
+{
+	// The next 6 lines of code detect if the window is closed
+	// And then shuts down the program
+	sf::Event event;
+	while (window.pollEvent(event))
 	{
-
-		// The next 6 lines of code detect if the window is closed
-		// And then shuts down the program
-		sf::Event event;
-		while (window.pollEvent(event))
-		{
-			if (event.type == sf::Event::Closed)
-				// Someone closed the window- bye
-				window.close();
-		}
-		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Escape))
-		{
-			// quit...
+		if (event.type == sf::Event::Closed)
+			// Someone closed the window- bye
 			window.close();
-		}
-
-		// move bat
-		moveBat(registry, windowWidth);
-
-		// handle fixed velocity bodies
-		const int collisionInterval = 5;
-		for (float i = 0; i < collisionInterval; i++)
-		{
-			updatePhysics(registry, windowHeight, windowWidth, 1.0f / collisionInterval);
-		}
-
-		// destroy breakables!
-		removeDestroyedBreakables(registry);
-
-
-		// Clear everything from the last run of the while loop
-		window.clear();
-
-		// Draw our game scene here
-		render(registry, window);
-
-
-		// Draw our score
-
-
-		// Show everything we just drew
-		window.display();
 	}
+	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Escape))
+	{
+		// quit...
+		window.close();
+	}
+
+	// move bat
+	moveBat(registry, windowWidth);
+
+	// handle fixed velocity bodies
+	const int collisionInterval = 5;
+	for (float i = 0; i < collisionInterval; i++)
+	{
+		updatePhysics(registry, windowHeight, windowWidth, 1.0f / collisionInterval);
+	}
+
+	// destroy breakables!
+	removeDestroyedBreakables(registry);
 }
 
 void Game::Game::moveBat(entt::registry& registry, const int windowWidth)
@@ -359,7 +389,7 @@ void Game::Game::removeDestroyedBreakables(entt::registry& registry)
 	});
 }
 
-void Game::Game::render(entt::registry& registry, sf::RenderWindow& window)
+void Game::Game::drawSceneObjects(entt::registry& registry, sf::RenderWindow& window)
 
 {
 	registry.view<Component::BoxCollider, Component::Position>().each([&](auto entity, Component::BoxCollider& size, Component::Position& pos) {
@@ -367,5 +397,5 @@ void Game::Game::render(entt::registry& registry, sf::RenderWindow& window)
 		shape.setPosition(pos.x, pos.y);
 		shape.setSize(sf::Vector2f(size.width, size.height));
 		window.draw(shape);
-		});
+	});
 }

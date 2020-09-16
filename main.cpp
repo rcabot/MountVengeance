@@ -16,10 +16,7 @@ int main()
     const int FPS = 60; //The desired FPS. (The number of updates each second).
     sf::RenderWindow window(sf::VideoMode(windowWidth, windowHeight), "Breakout");
 
-	//todo GET RID
-    window.setFramerateLimit(FPS);
-
-	Game::Game game{ window };
+	Game::Game game{ window, 60 };
 
 	game.run();
 

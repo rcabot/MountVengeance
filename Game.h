@@ -10,11 +10,19 @@ namespace Game {
 	class Game
 	{
 	public:
-		Game(sf::RenderWindow& w) : window(w){}
+		Game(sf::RenderWindow& w, int FPS) : 
+			window(w), 
+			windowWidth(window.getSize().x),
+			windowHeight(window.getSize().y),
+			SECONDS_PER_UPDATE(1.0f/ FPS){}
 		void run();
+		void initialSetup();
 	private:
 		sf::RenderWindow& window;
 		entt::registry registry;
+		const int windowWidth;
+		const int windowHeight;
+		const double SECONDS_PER_UPDATE;
 
 		void moveBat(entt::registry& registry, const int windowWidth);
 
@@ -35,7 +43,9 @@ namespace Game {
 
 		void removeDestroyedBreakables(entt::registry& registry);
 
-		void render(entt::registry& registry, sf::RenderWindow& window);
+		void drawSceneObjects(entt::registry& registry, sf::RenderWindow& window);
+		void renderAll();
+		void updateGameState();
 	};
 }
 
