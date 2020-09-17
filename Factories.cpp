@@ -30,3 +30,14 @@ entt::entity Factory::makeGoblin(entt::registry& registry, const float bricksSiz
 	registry.emplace<Component::Position>(goblin, x, y);
 	return goblin;
 }
+
+
+entt::entity Factory::makeHouse(entt::registry& registry, const float bricksSizeX, const float bricksSizeY, const float x, const float y)
+{
+	auto house = registry.create();
+	registry.emplace<Component::Breakable>(house);
+	registry.emplace<Component::House>(house);
+	registry.emplace<Component::BoxCollider>(house, bricksSizeX, bricksSizeY);
+	registry.emplace<Component::Position>(house, x, y);
+	return house;
+}

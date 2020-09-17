@@ -167,14 +167,19 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="DefendingAgainstGoblinsState.cpp" />
+    <ClCompile Include="GameState.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Factories.cpp" />
     <ClCompile Include="Game.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="DefendingAgainstGoblinsState.h" />
     <ClInclude Include="Game.h" />
     <ClInclude Include="Factories.h" />
     <ClInclude Include="Component.h" />
+    <ClInclude Include="GameState.h" />
+    <ClInclude Include="Header.h" />
     <ClInclude Include="Utils.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

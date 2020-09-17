@@ -8,4 +8,5 @@ namespace Component {
 	struct BoxCollider { float width, height; };
 	struct Position { float x, y; };
 	struct FixedSpeedBody { float xVelocity, yVelocity; };
+	struct House { };
 }

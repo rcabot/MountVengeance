@@ -1,6 +1,8 @@
 #include "Game.h"
 #include "Factories.h"
 #include "Utils.h"
+#include "GameState.h"
+#include "GameStates.h"
 #include <sstream>
 #include <math.h> 
 #include <limits>
@@ -9,7 +11,14 @@
 #include <ctime>
 #define PI 3.14159265f
 
-void Game::Game::run()
+GameEngine::Game::Game(sf::RenderWindow& w, int FPS) :
+	window(w),
+	windowWidth(window.getSize().x),
+	windowHeight(window.getSize().y),
+	SECONDS_PER_UPDATE(1.0f / FPS),
+	state(GameEngine::defenceState) { }
+
+void GameEngine::Game::run()
 {
 	initialSetup();
 
@@ -39,7 +48,7 @@ void Game::Game::run()
 	}
 }
 
-void Game::Game::initialSetup()
+void GameEngine::Game::initialSetup()
 {
 	// bat
 	auto bat = Factory::makeBat(registry, windowWidth / 2.0f, windowHeight - 100.0f);
@@ -51,19 +60,14 @@ void Game::Game::initialSetup()
 		Factory::makeBall(registry, i * 50.0f + windowWidth / 2.0f, windowHeight / 2.0f, 5.0f, 5.0f);
 	}
 
-	// bricks
+	// goblins
 	const float bricksSizeX = 70.0f;
 	const float bricksSizeY = 30.0f;
 	const float spacing = 0.0f;
 	const float brickstartX = bricksSizeX, brickstartY = bricksSizeY;
 	const float birckendX = windowWidth - bricksSizeX, brickendY = windowHeight / 2.0f;
-	for (float x = brickstartX; x < birckendX; x += bricksSizeX + spacing)
-	{
-		for (float y = brickstartY; y < brickendY; y += bricksSizeY + spacing)
-		{
-			Factory::makeGoblin(registry, bricksSizeX, bricksSizeY, x, y);
-		}
-	}
+	sf::FloatRect goblinArmRect(brickstartX,brickstartY,windowWidth-bricksSizeX*2.0f,(windowHeight / 2.0f) - bricksSizeY * 2.0f);
+	generateGoblinArmy(bricksSizeX,bricksSizeY, goblinArmRect, spacing);
 
 	// houses
 	const float houseSizeX = 50.0f;
@@ -74,11 +78,38 @@ void Game::Game::initialSetup()
 	const float houseY = windowHeight - houseSizeY;
 	for (float x = brickstartX; x < birckendX; x += bricksSizeX + housespacing)
 	{
-		Factory::makeGoblin(registry, houseSizeX, houseSizeY, x, houseY);
+		Factory::makeHouse(registry, houseSizeX, houseSizeY, x, houseY);
 	}
 }
 
-void Game::Game::renderAll()
+void GameEngine::Game::generateGoblinArmy(const float& sizeX, const float& sizeY, const sf::FloatRect& rect, const float& spacing)
+{
+	for (float x = rect.left; x < rect.left+rect.width; x += sizeX + spacing)
+	{
+		for (float y = rect.top; y < rect.top+rect.height; y += sizeY + spacing)
+		{
+			Factory::makeGoblin(registry, sizeX, sizeY, x, y);
+		}
+	}
+}
+
+void GameEngine::Game::detectWindowClose()
+{
+	sf::Event event;
+	while (window.pollEvent(event))
+	{
+		if (event.type == sf::Event::Closed)
+			// Someone closed the window- bye
+			window.close();
+	}
+	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Escape))
+	{
+		// quit...
+		window.close();
+	}
+}
+
+void GameEngine::Game::renderAll()
 {
 	// Clear everything from the last run of the while loop
 	window.clear();
@@ -94,38 +125,12 @@ void Game::Game::renderAll()
 	window.display();
 }
 
-void Game::Game::updateGameState()
+void GameEngine::Game::updateGameState()
 {
-	// The next 6 lines of code detect if the window is closed
-	// And then shuts down the program
-	sf::Event event;
-	while (window.pollEvent(event))
-	{
-		if (event.type == sf::Event::Closed)
-			// Someone closed the window- bye
-			window.close();
-	}
-	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Escape))
-	{
-		// quit...
-		window.close();
-	}
-
-	// move bat
-	moveBat(registry, windowWidth);
-
-	// handle fixed velocity bodies
-	const int collisionInterval = 5;
-	for (float i = 0; i < collisionInterval; i++)
-	{
-		updatePhysics(registry, windowHeight, windowWidth, 1.0f / collisionInterval);
-	}
-
-	// destroy breakables!
-	removeDestroyedBreakables(registry);
+	state = state.update(*this);
 }
 
-void Game::Game::moveBat(entt::registry& registry, const int windowWidth)
+void GameEngine::Game::moveBat()
 {
 	registry.view<Component::Bat, Component::Position, Component::BoxCollider>().each([&](auto entity, Component::Bat& bat, Component::Position& pos, Component::BoxCollider& size) {
 
@@ -140,10 +145,10 @@ void Game::Game::moveBat(entt::registry& registry, const int windowWidth)
 			// move right...
 			pos.x += bat.speed;
 		}
-		});
+	});
 }
 
-sf::FloatRect Game::Game::reverseRectUntilNonIntersecting(const Component::FixedSpeedBody& b, const sf::FloatRect& bodyRect, const sf::FloatRect& intersectingRect)
+sf::FloatRect GameEngine::Game::reverseRectUntilNonIntersecting(const Component::FixedSpeedBody& b, const sf::FloatRect& bodyRect, const sf::FloatRect& intersectingRect)
 {
 	sf::FloatRect rr = bodyRect;
 	const float reverseSpeedScale = 0.1f;
@@ -154,7 +159,7 @@ sf::FloatRect Game::Game::reverseRectUntilNonIntersecting(const Component::Fixed
 	return rr;
 }
 
-float Game::Game::SweptAABB(float vx, float vy, const sf::FloatRect b1, const sf::FloatRect b2, float& normalx, float& normaly)
+float GameEngine::Game::SweptAABB(float vx, float vy, const sf::FloatRect b1, const sf::FloatRect b2, float& normalx, float& normaly)
 {
 	float xInvEntry, yInvEntry;
 	float xInvExit, yInvExit;
@@ -253,7 +258,7 @@ float Game::Game::SweptAABB(float vx, float vy, const sf::FloatRect b1, const sf
 	return entryTime;
 }
 
-sf::FloatRect Game::Game::GetSweptBroadphaseBox(const sf::FloatRect& b, const float vx, const float vy)
+sf::FloatRect GameEngine::Game::GetSweptBroadphaseBox(const sf::FloatRect& b, const float vx, const float vy)
 
 {
 	sf::FloatRect broadphasebox;
@@ -265,7 +270,7 @@ sf::FloatRect Game::Game::GetSweptBroadphaseBox(const sf::FloatRect& b, const fl
 	return broadphasebox;
 }
 
-void Game::Game::updatePhysics(entt::registry& registry, const int windowHeight, const int windowWidth, const float delta)
+void GameEngine::Game::updatePhysics(const float delta)
 
 {
 	auto bodyView = registry.view<Component::FixedSpeedBody, Component::Position, Component::BoxCollider>();
@@ -378,7 +383,7 @@ void Game::Game::updatePhysics(entt::registry& registry, const int windowHeight,
 
 }
 
-void Game::Game::removeDestroyedBreakables(entt::registry& registry)
+void GameEngine::Game::removeDestroyedBreakables()
 
 {
 	registry.view<Component::Breakable>().each([&](auto entity, Component::Breakable& b) {
@@ -389,7 +394,7 @@ void Game::Game::removeDestroyedBreakables(entt::registry& registry)
 	});
 }
 
-void Game::Game::drawSceneObjects(entt::registry& registry, sf::RenderWindow& window)
+void GameEngine::Game::drawSceneObjects(entt::registry& registry, sf::RenderWindow& window)
 
 {
 	registry.view<Component::BoxCollider, Component::Position>().each([&](auto entity, Component::BoxCollider& size, Component::Position& pos) {

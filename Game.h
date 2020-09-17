@@ -1,30 +1,36 @@
 #pragma once
 
 #include "Component.h"
+
 #include <entt/entity/registry.hpp>
 #include <SFML/Graphics.hpp>
 
-namespace Game {
+namespace GameEngine {
 
 
+	class GameState;
 	class Game
 	{
 	public:
-		Game(sf::RenderWindow& w, int FPS) : 
-			window(w), 
-			windowWidth(window.getSize().x),
-			windowHeight(window.getSize().y),
-			SECONDS_PER_UPDATE(1.0f/ FPS){}
+		Game(sf::RenderWindow& w, int FPS);
 		void run();
 		void initialSetup();
+		void generateGoblinArmy(const float& sizeX, const float& sizeY, const sf::FloatRect& rect, const float& spacing);
+		void detectWindowClose();
+		void moveBat();
+		void updatePhysics(const float delta);
+		void removeDestroyedBreakables();
+
+
+
 	private:
 		sf::RenderWindow& window;
+		GameState& state;
 		entt::registry registry;
 		const int windowWidth;
 		const int windowHeight;
 		const double SECONDS_PER_UPDATE;
 
-		void moveBat(entt::registry& registry, const int windowWidth);
 
 		sf::FloatRect reverseRectUntilNonIntersecting(const Component::FixedSpeedBody& b,
 			const sf::FloatRect& bodyRect, const sf::FloatRect& intersectingRect);
@@ -39,13 +45,10 @@ namespace Game {
 
 		sf::FloatRect GetSweptBroadphaseBox(const sf::FloatRect& b, const float vx, const float vy);
 
-		void updatePhysics(entt::registry& registry, const int windowHeight, const int windowWidth, const float delta);
 
-		void removeDestroyedBreakables(entt::registry& registry);
 
 		void drawSceneObjects(entt::registry& registry, sf::RenderWindow& window);
 		void renderAll();
 		void updateGameState();
 	};
 }
-
