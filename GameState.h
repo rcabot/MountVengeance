@@ -8,7 +8,7 @@ namespace GameEngine {
 	{
 
 	public:
-		virtual GameState& update(Game& game) = 0;
+		virtual GameState* update(Game& game) = 0;
 
 
 	};

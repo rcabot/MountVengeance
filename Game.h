@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Component.h"
-
+#include "SpriteRenderer.h"
 #include <entt/entity/registry.hpp>
 #include <SFML/Graphics.hpp>
 
@@ -14,18 +14,22 @@ namespace GameEngine {
 	public:
 		Game(sf::RenderWindow& w, int FPS);
 		void run();
-		void initialSetup();
+		bool armyDefeated();
+		void setupNewGame();
+		void spawnBalls(const int& startingBalls);
 		void generateGoblinArmy(const float& sizeX, const float& sizeY, const sf::FloatRect& rect, const float& spacing);
+		void generateGoblinArmy(const float magnitude);
 		void detectWindowClose();
 		void moveBat();
 		void updatePhysics(const float delta);
 		void removeDestroyedBreakables();
-
-
-
+		void removeAllBalls();
 	private:
+
+		sf::Transform worldTransform;
 		sf::RenderWindow& window;
-		GameState& state;
+		SpriteSheetSpriteRenderer spriteRenderer;
+		GameState* state;
 		entt::registry registry;
 		const int windowWidth;
 		const int windowHeight;
@@ -50,5 +54,7 @@ namespace GameEngine {
 		void drawSceneObjects(entt::registry& registry, sf::RenderWindow& window);
 		void renderAll();
 		void updateGameState();
+	public:
+		bool villageDestroyed();
 	};
 }

@@ -1,6 +1,7 @@
 #include "DefendingAgainstGoblinsState.h"
 #include "Game.h"
-GameEngine::GameState& GameEngine::DefendingAgainstGoblinsState::update(Game& game)
+#include "GameStates.h"
+GameEngine::GameState* GameEngine::DefendingAgainstGoblinsState::update(Game& game)
 {
 
 	game.detectWindowClose();
@@ -18,5 +19,13 @@ GameEngine::GameState& GameEngine::DefendingAgainstGoblinsState::update(Game& ga
 	// destroy breakables!
 	game.removeDestroyedBreakables();
 
-	return *this;
+	// todo: move this to tryTransition();
+
+	if (game.armyDefeated()) {
+		return &GameEngine::respiteState;
+	}
+	if (game.villageDestroyed()) {
+		return &GameEngine::failState;
+	}
+	return &GameEngine::defenceState;
 }

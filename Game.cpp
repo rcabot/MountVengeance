@@ -16,11 +16,14 @@ GameEngine::Game::Game(sf::RenderWindow& w, int FPS) :
 	windowWidth(window.getSize().x),
 	windowHeight(window.getSize().y),
 	SECONDS_PER_UPDATE(1.0f / FPS),
-	state(GameEngine::defenceState) { }
+	state(&GameEngine::defenceState) 
+{ 
+	spriteRenderer.load("");
+}
 
 void GameEngine::Game::run()
 {
-	initialSetup();
+	setupNewGame();
 
 	double t = 0.0;
 	const double dt = 0.016;
@@ -48,49 +51,81 @@ void GameEngine::Game::run()
 	}
 }
 
-void GameEngine::Game::initialSetup()
+bool GameEngine::Game::armyDefeated()
 {
+	auto army = registry.view<Component::Goblin>();
+	/*int count = 0;
+	for (auto entity : army)
+	{
+		count++;
+	}
+	std::cout << count << "\n";*/
+	return army.empty();
+}
+
+void GameEngine::Game::setupNewGame()
+{
+	registry.clear();
 	// bat
 	auto bat = Factory::makeBat(registry, windowWidth / 2.0f, windowHeight - 100.0f);
 
 	// balls
 	const int startingBalls = 2;
-	for (int i = 0; i < startingBalls; i++)
-	{
-		Factory::makeBall(registry, i * 50.0f + windowWidth / 2.0f, windowHeight / 2.0f, 5.0f, 5.0f);
-	}
+	spawnBalls(startingBalls);
 
 	// goblins
-	const float bricksSizeX = 70.0f;
-	const float bricksSizeY = 30.0f;
-	const float spacing = 0.0f;
-	const float brickstartX = bricksSizeX, brickstartY = bricksSizeY;
-	const float birckendX = windowWidth - bricksSizeX, brickendY = windowHeight / 2.0f;
-	sf::FloatRect goblinArmRect(brickstartX,brickstartY,windowWidth-bricksSizeX*2.0f,(windowHeight / 2.0f) - bricksSizeY * 2.0f);
-	generateGoblinArmy(bricksSizeX,bricksSizeY, goblinArmRect, spacing);
+	generateGoblinArmy(0.0f);
 
 	// houses
-	const float houseSizeX = 50.0f;
-	const float houseSizeY = 50.0f;
+	const float houseSizeX = 64.0f;
+	const float houseSizeY = 64.0f;
 	const float housespacing = 10.0f;
 	const float housestartX = houseSizeX;
 	const float houseendX = windowWidth - houseSizeX;
 	const float houseY = windowHeight - houseSizeY;
-	for (float x = brickstartX; x < birckendX; x += bricksSizeX + housespacing)
+	for (float x = housestartX; x < houseendX; x += houseSizeX + housespacing)
 	{
 		Factory::makeHouse(registry, houseSizeX, houseSizeY, x, houseY);
 	}
 }
 
+void GameEngine::Game::spawnBalls(const int& amount)
+{
+	for (int i = 0; i < amount; i++)
+	{
+		Factory::makeBall(registry, i * 50.0f + windowWidth / 2.0f, windowHeight / 2.0f, 5.0f, 5.0f);
+	}
+}
+
 void GameEngine::Game::generateGoblinArmy(const float& sizeX, const float& sizeY, const sf::FloatRect& rect, const float& spacing)
 {
+	const int skipColumnInterval = 2;
+	int columnCount = 0;
 	for (float x = rect.left; x < rect.left+rect.width; x += sizeX + spacing)
 	{
+		if (columnCount % skipColumnInterval == 0) {
+			++columnCount;
+			continue;
+		}
 		for (float y = rect.top; y < rect.top+rect.height; y += sizeY + spacing)
 		{
 			Factory::makeGoblin(registry, sizeX, sizeY, x, y);
 		}
+		++columnCount;
 	}
+}
+
+void GameEngine::Game::generateGoblinArmy(const float magnitude)
+{
+	const float bricksSizeX = 64.0f;
+	const float bricksSizeY = 32.0f;
+	const float spacing = 0.0f;
+	const float brickstartX = bricksSizeX;
+	const float brickstartY = bricksSizeY;
+	const float birckendX = windowWidth - bricksSizeX; 
+	const float brickendY = windowHeight / 2.0f;
+	sf::FloatRect goblinArmRect(brickstartX, brickstartY, windowWidth - bricksSizeX * 2.0f, (windowHeight / 2.0f) - bricksSizeY * 2.0f);
+	generateGoblinArmy(bricksSizeX, bricksSizeY, goblinArmRect, spacing);
 }
 
 void GameEngine::Game::detectWindowClose()
@@ -127,7 +162,13 @@ void GameEngine::Game::renderAll()
 
 void GameEngine::Game::updateGameState()
 {
-	state = state.update(*this);
+	state = state->update(*this);
+}
+
+bool GameEngine::Game::villageDestroyed()
+{
+	auto village = registry.view<Component::House>();
+	return village.empty();
 }
 
 void GameEngine::Game::moveBat()
@@ -394,13 +435,18 @@ void GameEngine::Game::removeDestroyedBreakables()
 	});
 }
 
-void GameEngine::Game::drawSceneObjects(entt::registry& registry, sf::RenderWindow& window)
+void GameEngine::Game::removeAllBalls()
+{
+	registry.view<Component::Ball>().each([&](auto entity) {});
+}
 
+void GameEngine::Game::drawSceneObjects(entt::registry& registry, sf::RenderWindow& window)
 {
 	registry.view<Component::BoxCollider, Component::Position>().each([&](auto entity, Component::BoxCollider& size, Component::Position& pos) {
 		sf::RectangleShape shape;
 		shape.setPosition(pos.x, pos.y);
 		shape.setSize(sf::Vector2f(size.width, size.height));
 		window.draw(shape);
+		//spriteRenderer.draw(window, worldTransform);
 	});
 }

@@ -25,6 +25,7 @@ entt::entity Factory::makeBall(entt::registry& registry, const float posX, const
 entt::entity Factory::makeGoblin(entt::registry& registry, const float bricksSizeX, const float bricksSizeY, const float x, const float y)
 {
 	auto goblin = registry.create();
+	registry.emplace<Component::Goblin>(goblin);
 	registry.emplace<Component::Breakable>(goblin);
 	registry.emplace<Component::BoxCollider>(goblin, bricksSizeX, bricksSizeY);
 	registry.emplace<Component::Position>(goblin, x, y);

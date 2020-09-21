@@ -1,7 +1,8 @@
 #pragma once
 #include "GameState.h"
-namespace GameEngine {
-	class DefendingAgainstGoblinsState : public GameState
+namespace GameEngine{
+
+	class RespiteState : public GameState
 	{
 	public:
 		GameState* update(Game& game) override;

@@ -11,8 +11,8 @@
 
 int main()
 {
-    const int windowWidth = 1024;
-    const int windowHeight = 768;
+    const int windowWidth = 640;
+    const int windowHeight = 840;
     const int FPS = 60; //The desired FPS. (The number of updates each second).
     sf::RenderWindow window(sf::VideoMode(windowWidth, windowHeight), "Breakout");
 

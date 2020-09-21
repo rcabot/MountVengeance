@@ -9,4 +9,6 @@ namespace Component {
 	struct Position { float x, y; };
 	struct FixedSpeedBody { float xVelocity, yVelocity; };
 	struct House { };
+	struct Goblin { };
+	struct Sprite { };
 }

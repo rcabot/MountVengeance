@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -168,19 +168,29 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="DefendingAgainstGoblinsState.cpp" />
+    <ClCompile Include="FailState.cpp" />
     <ClCompile Include="GameState.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Factories.cpp" />
     <ClCompile Include="Game.cpp" />
+    <ClCompile Include="RespiteState.cpp" />
+    <ClCompile Include="SpriteRenderer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DefendingAgainstGoblinsState.h" />
+    <ClInclude Include="FailState.h" />
     <ClInclude Include="Game.h" />
     <ClInclude Include="Factories.h" />
     <ClInclude Include="Component.h" />
     <ClInclude Include="GameState.h" />
-    <ClInclude Include="Header.h" />
+    <ClInclude Include="GameStates.h" />
+    <ClInclude Include="resource.h" />
+    <ClInclude Include="RespiteState.h" />
+    <ClInclude Include="SpriteRenderer.h" />
     <ClInclude Include="Utils.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Breakout.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
