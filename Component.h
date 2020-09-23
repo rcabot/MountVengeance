@@ -10,5 +10,5 @@ namespace Component {
 	struct FixedSpeedBody { float xVelocity, yVelocity; };
 	struct House { };
 	struct Goblin { };
-	struct Sprite { };
+	struct Sprite { int index = -1; };
 }

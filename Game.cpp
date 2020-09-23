@@ -18,7 +18,9 @@ GameEngine::Game::Game(sf::RenderWindow& w, int FPS) :
 	SECONDS_PER_UPDATE(1.0f / FPS),
 	state(&GameEngine::defenceState) 
 { 
-	spriteRenderer.load("");
+	if (!spriteRenderer.load("spritesheet.png")) {
+		std::cout << "file not found...\n";
+	}
 }
 
 void GameEngine::Game::run()
@@ -437,16 +439,26 @@ void GameEngine::Game::removeDestroyedBreakables()
 
 void GameEngine::Game::removeAllBalls()
 {
-	registry.view<Component::Ball>().each([&](auto entity) {});
+	registry.view<Component::Ball>().each([&](auto entity) {
+		registry.destroy(entity);
+	});
 }
 
 void GameEngine::Game::drawSceneObjects(entt::registry& registry, sf::RenderWindow& window)
 {
-	registry.view<Component::BoxCollider, Component::Position>().each([&](auto entity, Component::BoxCollider& size, Component::Position& pos) {
-		sf::RectangleShape shape;
-		shape.setPosition(pos.x, pos.y);
-		shape.setSize(sf::Vector2f(size.width, size.height));
-		window.draw(shape);
-		//spriteRenderer.draw(window, worldTransform);
+	registry.view<Component::BoxCollider, Component::Position, Component::Sprite>().each([&](auto entity, Component::BoxCollider& size, Component::Position& pos, Component::Sprite& sprite) {
+		if (sprite.index == -1) {
+			sf::RectangleShape shape;
+			shape.setFillColor(sf::Color(255, 0, 255, 255));
+			shape.setPosition(pos.x, pos.y);
+			shape.setSize(sf::Vector2f(size.width, size.height));
+			window.draw(shape);
+		}
+		else {
+			spriteRenderer.grabSprite(sf::Vector2u(64, 64), sf::Vector2u(1, 1), sprite.index);
+			spriteRenderer.setPosition(pos.x, pos.y);
+			spriteRenderer.draw(window, worldTransform);
+		}
+		
 	});
 }

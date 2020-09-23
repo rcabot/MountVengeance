@@ -7,18 +7,20 @@ entt::entity Factory::makeBat(entt::registry& registry, const float sizeX, const
 	registry.emplace<Component::Bat>(bat, 10.0f);
 	registry.emplace<Component::BoxCollider>(bat, 250.0f, 5.0f);
 	registry.emplace<Component::Position>(bat, sizeX, sizeY);
+	registry.emplace<Component::Sprite>(bat, -1);
 	return bat;
 }
 
 entt::entity Factory::makeBall(entt::registry& registry, const float posX, const float posY, const float initVelX, const float initVelY)
 {
-	const float sizeX = 5.0f;
-	const float sizeY = 5.0f;
+	const float sizeX = 16.0f;
+	const float sizeY = 16.0f;
 	auto ball = registry.create();
 	registry.emplace<Component::Ball>(ball);
 	registry.emplace<Component::BoxCollider>(ball, sizeX, sizeY);
 	registry.emplace<Component::Position>(ball, posX, posY);
 	registry.emplace<Component::FixedSpeedBody>(ball, initVelX, initVelY);
+	registry.emplace<Component::Sprite>(ball, -1);
 	return ball;
 }
 
@@ -29,6 +31,7 @@ entt::entity Factory::makeGoblin(entt::registry& registry, const float bricksSiz
 	registry.emplace<Component::Breakable>(goblin);
 	registry.emplace<Component::BoxCollider>(goblin, bricksSizeX, bricksSizeY);
 	registry.emplace<Component::Position>(goblin, x, y);
+	registry.emplace<Component::Sprite>(goblin, 1);
 	return goblin;
 }
 
@@ -40,5 +43,6 @@ entt::entity Factory::makeHouse(entt::registry& registry, const float bricksSize
 	registry.emplace<Component::House>(house);
 	registry.emplace<Component::BoxCollider>(house, bricksSizeX, bricksSizeY);
 	registry.emplace<Component::Position>(house, x, y);
+	registry.emplace<Component::Sprite>(house, 0);
 	return house;
 }
