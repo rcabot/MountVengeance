@@ -12,6 +12,9 @@
 #include <random>
 #define PI 3.14159265f
 
+
+const double dt = 0.016;
+
 GameEngine::Game::Game(sf::RenderWindow& w, int FPS) :
 	window(w),
 	windowWidth(window.getSize().x),
@@ -29,7 +32,6 @@ void GameEngine::Game::run()
 	setupNewGame();
 
 	double t = 0.0;
-	const double dt = 0.016;
 
 	auto currentTime = std::chrono::system_clock::now();
 	std::cout << currentTime.time_since_epoch().count() << "\n";
@@ -462,6 +464,18 @@ void GameEngine::Game::removeAllBalls()
 {
 	registry.view<Component::Ball>().each([&](auto entity) {
 		registry.destroy(entity);
+	});
+}
+
+void GameEngine::Game::updateEnemies()
+{
+
+	registry.view<Component::Enemy, Component::Position>().each([&](auto entity,Component::Enemy& enemy, Component::Position& pos) {
+		if (enemy.shootsBalls) enemy.shootBallTimer += dt;
+		if (enemy.shootBallTimer > enemy.shootBallAtTime) {
+			Factory::makeBall(registry, pos.x, pos.y, 0.0f, 7.0f);
+			enemy.shootBallTimer = 0.0f;
+		}
 	});
 }
 

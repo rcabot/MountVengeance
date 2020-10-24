@@ -24,6 +24,7 @@ namespace GameEngine {
 		void updatePhysics(const float delta);
 		void removeDestroyedBreakables();
 		void removeAllBalls();
+		void updateEnemies();
 	private:
 
 		sf::Transform worldTransform;

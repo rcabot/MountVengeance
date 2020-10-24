@@ -10,7 +10,11 @@ namespace Component {
 	struct Position { float x, y; };
 	struct FixedSpeedBody { float xVelocity, yVelocity; };
 	struct House { };
-	struct Enemy { bool shootsBalls = false; };
+	struct Enemy { 
+		bool shootsBalls = false;
+		float shootBallTimer = 0.0f;
+		float shootBallAtTime = 10.0f;
+	};
 	struct Sprite { int index = -1; };
 
 }

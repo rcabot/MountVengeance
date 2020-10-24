@@ -9,6 +9,8 @@ GameEngine::GameState* GameEngine::DefendingAgainstGoblinsState::update(Game& ga
 	// move bat
 	game.moveBat();
 
+	game.updateEnemies();
+
 	// handle fixed velocity bodies
 	const int collisionInterval = 5;
 	for (float i = 0; i < collisionInterval; i++)
