@@ -29,7 +29,7 @@ entt::entity Factory::makeEnemy(entt::registry& registry, const float bricksSize
 	auto enemy = registry.create();
 	registry.emplace<Component::Enemy>(enemy, canShootBalls);
 	registry.emplace<Component::Breakable>(enemy);
-	registry.emplace<Component::BoxCollider>(enemy, bricksSizeX, bricksSizeY);
+	registry.emplace<Component::BoxCollider>(enemy, bricksSizeX, bricksSizeY,(unsigned int)Component::CollisionLayer::Enemies);
 	registry.emplace<Component::Position>(enemy, x, y);
 	registry.emplace<Component::Sprite>(enemy, 1);
 	return enemy;

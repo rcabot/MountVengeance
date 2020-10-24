@@ -3,10 +3,18 @@
 
 namespace Component {
 
+	enum CollisionLayer {
+		Default = 1 << 0,
+		Enemies = 1 << 1
+	};
+
 	struct Bat { float speed; };
 	struct Ball {};
 	struct Breakable { int breakState = 1; };
-	struct BoxCollider { float width, height; };
+	struct BoxCollider { 
+		float width, height; 
+		unsigned int layer = CollisionLayer::Default;
+	};
 	struct Position { float x, y; };
 	struct FixedSpeedBody { float xVelocity, yVelocity; };
 	struct House { };

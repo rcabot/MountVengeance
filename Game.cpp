@@ -190,6 +190,11 @@ void GameEngine::Game::updateGameState()
 	state = state->update(*this);
 }
 
+bool GameEngine::Game::collidersHaveCommonLayer(const Component::BoxCollider& c1, const Component::BoxCollider& c2)
+{
+	return (c1.layer & c2.layer) != 0;
+}
+
 bool GameEngine::Game::villageDestroyed()
 {
 	auto village = registry.view<Component::House>();
@@ -345,10 +350,10 @@ void GameEngine::Game::updatePhysics(const float delta)
 
 		auto& vel = bodyView.get<Component::FixedSpeedBody>(bodyEntity);
 		auto& pos = bodyView.get<Component::Position>(bodyEntity);
-		auto& size = bodyView.get<Component::BoxCollider>(bodyEntity);
+		auto& bodyCollider = bodyView.get<Component::BoxCollider>(bodyEntity);
 
 
-		sf::FloatRect rect(sf::Vector2f(pos.x, pos.y), sf::Vector2f(size.width, size.height));
+		sf::FloatRect rect(sf::Vector2f(pos.x, pos.y), sf::Vector2f(bodyCollider.width, bodyCollider.height));
 		sf::FloatRect broadphasebox = GetSweptBroadphaseBox(rect, vel.xVelocity * delta, vel.yVelocity * delta);
 
 		float shortestCollisionTime = 2.0f;
@@ -357,9 +362,11 @@ void GameEngine::Game::updatePhysics(const float delta)
 		entt::entity collidedEntity = entt::null;
 
 		for (auto colliderEntity : colliderView) {
-			if (registry.any<Component::FixedSpeedBody>(colliderEntity)) continue;
+			if (registry.any<Component::FixedSpeedBody>(colliderEntity)) continue; // if this is another body, ignore
 			auto& colliderPosition = registry.get<Component::Position>(colliderEntity);
 			auto& collider = colliderView.get<Component::BoxCollider>(colliderEntity);
+
+			if (!collidersHaveCommonLayer(collider,bodyCollider)) continue;
 			sf::FloatRect batRect(sf::Vector2f(colliderPosition.x, colliderPosition.y), sf::Vector2f(collider.width, collider.height));
 			// Has the ball hit the bat?
 			if (broadphasebox.intersects(batRect))
@@ -390,7 +397,7 @@ void GameEngine::Game::updatePhysics(const float delta)
 			if (abs(bestnormalx) > 0.0001f) vel.xVelocity *= -1;
 			if (abs(bestnormaly) > 0.0001f) vel.yVelocity *= -1;
 
-
+			//todo move functionality into boxcollider (collision response function)
 			if (collidedEntity != entt::null && registry.any<Component::Bat>(collidedEntity)) {
 				auto& batSize = registry.get<Component::BoxCollider>(collidedEntity);
 				auto& batPosition = registry.get<Component::Position>(collidedEntity);
@@ -411,9 +418,16 @@ void GameEngine::Game::updatePhysics(const float delta)
 			pos.x += vel.xVelocity * remainingtime * delta;
 			pos.y += vel.yVelocity * remainingtime * delta;
 
-			if (collidedEntity != entt::null && registry.any<Component::Breakable>(collidedEntity)) {
-				auto& breakable = registry.get<Component::Breakable>(collidedEntity);
-				breakable.breakState--;
+			// todo move this functionality into boxcollider (oncollide)
+			if (collidedEntity != entt::null) {
+
+				if (registry.any<Component::Breakable>(collidedEntity)) {
+					auto& breakable = registry.get<Component::Breakable>(collidedEntity);
+					breakable.breakState--;
+				}
+				if (registry.any<Component::Bat>(collidedEntity)) {
+					bodyCollider.layer = Component::CollisionLayer::Default + Component::CollisionLayer::Enemies;
+				}
 			}
 			return;
 		}
@@ -439,7 +453,7 @@ void GameEngine::Game::updatePhysics(const float delta)
 		}
 
 		// Handle ball hitting sides
-		if (rect.left < 0 || rect.left + size.width > windowWidth)
+		if (rect.left < 0 || rect.left + bodyCollider.width > windowWidth)
 		{
 			pos.x -= (vel.xVelocity * 2 * delta);
 			vel.xVelocity *= -1;

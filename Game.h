@@ -25,6 +25,7 @@ namespace GameEngine {
 		void removeDestroyedBreakables();
 		void removeAllBalls();
 		void updateEnemies();
+		bool villageDestroyed();
 	private:
 
 		sf::Transform worldTransform;
@@ -55,7 +56,6 @@ namespace GameEngine {
 		void drawSceneObjects(entt::registry& registry, sf::RenderWindow& window);
 		void renderAll();
 		void updateGameState();
-	public:
-		bool villageDestroyed();
+		bool collidersHaveCommonLayer(const Component::BoxCollider& c1, const Component::BoxCollider& c2);
 	};
 }
