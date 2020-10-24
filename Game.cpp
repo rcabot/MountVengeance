@@ -9,6 +9,7 @@
 #include <iostream>
 #include <chrono>
 #include <ctime>
+#include <random>
 #define PI 3.14159265f
 
 GameEngine::Game::Game(sf::RenderWindow& w, int FPS) :
@@ -55,7 +56,7 @@ void GameEngine::Game::run()
 
 bool GameEngine::Game::armyDefeated()
 {
-	auto army = registry.view<Component::Goblin>();
+	auto army = registry.view<Component::Enemy>();
 	/*int count = 0;
 	for (auto entity : army)
 	{
@@ -111,9 +112,29 @@ void GameEngine::Game::generateGoblinArmy(const float& sizeX, const float& sizeY
 		}
 		for (float y = rect.top; y < rect.top+rect.height; y += sizeY + spacing)
 		{
-			Factory::makeGoblin(registry, sizeX, sizeY, x, y);
+			Factory::makeEnemy(registry, sizeX, sizeY, x, y,false);
 		}
 		++columnCount;
+	}
+	auto army = registry.view<Component::Enemy>();
+	//unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+	//std::shuffle(army.begin(), army.end(), std::default_random_engine(seed));
+
+	const int numberOfBallShooters = 2;
+	int ballShootersSpawned = 0;
+
+	for (auto& enemyEntity : army)
+	{
+		auto& position = registry.get<Component::Position>(enemyEntity);
+		auto& box = registry.get<Component::BoxCollider>(enemyEntity);
+		auto& enemy = registry.get<Component::Enemy>(enemyEntity);
+		auto& sprite = registry.get<Component::Sprite>(enemyEntity);
+		bool shootsBalls = ballShootersSpawned < numberOfBallShooters;
+		enemy.shootsBalls = shootsBalls;
+		if (shootsBalls) {
+			sprite.index = -1;
+			ballShootersSpawned++;
+		}
 	}
 }
 
@@ -124,7 +145,7 @@ void GameEngine::Game::generateGoblinArmy(const float magnitude)
 	const float spacing = 0.0f;
 	const float brickstartX = bricksSizeX;
 	const float brickstartY = bricksSizeY;
-	const float birckendX = windowWidth - bricksSizeX; 
+	const float brickendX = windowWidth - bricksSizeX; 
 	const float brickendY = windowHeight / 2.0f;
 	sf::FloatRect goblinArmRect(brickstartX, brickstartY, windowWidth - bricksSizeX * 2.0f, (windowHeight / 2.0f) - bricksSizeY * 2.0f);
 	generateGoblinArmy(bricksSizeX, bricksSizeY, goblinArmRect, spacing);

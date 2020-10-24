@@ -1,4 +1,5 @@
 #pragma once
+#include <entt/entity/registry.hpp>
 
 namespace Component {
 
@@ -9,6 +10,7 @@ namespace Component {
 	struct Position { float x, y; };
 	struct FixedSpeedBody { float xVelocity, yVelocity; };
 	struct House { };
-	struct Goblin { };
+	struct Enemy { bool shootsBalls = false; };
 	struct Sprite { int index = -1; };
+
 }

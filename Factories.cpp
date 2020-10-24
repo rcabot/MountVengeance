@@ -24,15 +24,15 @@ entt::entity Factory::makeBall(entt::registry& registry, const float posX, const
 	return ball;
 }
 
-entt::entity Factory::makeGoblin(entt::registry& registry, const float bricksSizeX, const float bricksSizeY, const float x, const float y)
+entt::entity Factory::makeEnemy(entt::registry& registry, const float bricksSizeX, const float bricksSizeY, const float x, const float y, const bool canShootBalls)
 {
-	auto goblin = registry.create();
-	registry.emplace<Component::Goblin>(goblin);
-	registry.emplace<Component::Breakable>(goblin);
-	registry.emplace<Component::BoxCollider>(goblin, bricksSizeX, bricksSizeY);
-	registry.emplace<Component::Position>(goblin, x, y);
-	registry.emplace<Component::Sprite>(goblin, 1);
-	return goblin;
+	auto enemy = registry.create();
+	registry.emplace<Component::Enemy>(enemy, canShootBalls);
+	registry.emplace<Component::Breakable>(enemy);
+	registry.emplace<Component::BoxCollider>(enemy, bricksSizeX, bricksSizeY);
+	registry.emplace<Component::Position>(enemy, x, y);
+	registry.emplace<Component::Sprite>(enemy, 1);
+	return enemy;
 }
 
 
