@@ -131,14 +131,17 @@ void GameEngine::Game::generateGoblinArmy(const float& sizeX, const float& sizeY
 		}
 		++columnCount;
 	}
+	
+	registry.sort<Component::Enemy>([](const auto& lhs, const auto& rhs) {
+		return lhs.randInt > rhs.randInt;
+	});
+	
 	auto army = registry.view<Component::Enemy>();
-	//unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
-	//std::shuffle(army.begin(), army.end(), std::default_random_engine(seed));
 
 	const int numberOfBallShooters = 2;
 	int ballShootersSpawned = 0;
 
-	for (auto& enemyEntity : army)
+	for (const auto& enemyEntity : army)
 	{
 		auto& position = registry.get<Component::Position>(enemyEntity);
 		auto& box = registry.get<Component::BoxCollider>(enemyEntity);

@@ -20,6 +20,7 @@ namespace Component {
 	struct House { };
 	struct Enemy { 
 		bool shootsBalls = false;
+		int randInt;
 		float shootBallTimer = 0.0f;
 		float shootBallAtTime = 10.0f;
 	};
