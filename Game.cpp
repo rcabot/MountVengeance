@@ -20,11 +20,27 @@ GameEngine::Game::Game(sf::RenderWindow& w, int FPS) :
 	windowWidth(window.getSize().x),
 	windowHeight(window.getSize().y),
 	SECONDS_PER_UPDATE(1.0f / FPS),
-	state(&GameEngine::defenceState) 
+	state(&GameEngine::respiteState) 
 { 
 	if (!spriteRenderer.load("spritesheet.png")) {
 		std::cout << "file not found...\n";
 	}
+}
+void GameEngine::Game::setCurrentMaxBalls(int amt)
+{
+	maxBalls = amt;
+}
+
+int GameEngine::Game::getBallShootingEnemyCount()
+{
+	int count = 0;
+	registry.view<Component::Enemy>().each([&](auto entity, Component::Enemy& enemy) {
+		if (enemy.shootsBalls)
+		{
+			count++;
+		}
+	});
+	return count;
 }
 
 void GameEngine::Game::run()
@@ -74,13 +90,6 @@ void GameEngine::Game::setupNewGame()
 	// bat
 	auto bat = Factory::makeBat(registry, windowWidth / 2.0f, windowHeight - 100.0f);
 
-	// balls
-	const int startingBalls = 2;
-	spawnBalls(startingBalls);
-
-	// goblins
-	generateGoblinArmy(0.0f);
-
 	// houses
 	const float houseSizeX = 64.0f;
 	const float houseSizeY = 64.0f;
@@ -94,12 +103,16 @@ void GameEngine::Game::setupNewGame()
 	}
 }
 
-void GameEngine::Game::spawnBalls(const int& amount)
+void GameEngine::Game::progressEnemyBallSpawnTimers()
 {
-	for (int i = 0; i < amount; i++)
-	{
-		Factory::makeBall(registry, i * 50.0f + windowWidth / 2.0f, windowHeight / 2.0f, 5.0f, 5.0f);
-	}
+	float t = 0.5f;
+	registry.view<Component::Enemy>().each([&](auto entity, Component::Enemy& enemy) {
+		if(enemy.shootsBalls)
+		{
+			enemy.shootBallTimer = enemy.shootBallAtTime - t;
+			t += 1.5f;
+		}
+	});
 }
 
 void GameEngine::Game::generateGoblinArmy(const float& sizeX, const float& sizeY, const sf::FloatRect& rect, const float& spacing)
@@ -345,6 +358,7 @@ void GameEngine::Game::updatePhysics(const float delta)
 
 {
 	auto bodyView = registry.view<Component::FixedSpeedBody, Component::Position, Component::BoxCollider>();
+	bool tooManyBalls = bodyView.size() > maxBalls;
 	auto colliderView = registry.view<Component::BoxCollider>();
 	for (auto bodyEntity : bodyView) {
 
@@ -429,9 +443,14 @@ void GameEngine::Game::updatePhysics(const float delta)
 					bodyCollider.layer = Component::CollisionLayer::Default + Component::CollisionLayer::Enemies;
 				}
 			}
+			if (tooManyBalls)
+			{
+				registry.destroy(bodyEntity);
+			}
 			return;
 		}
 
+		bool collidedWithWall = false;
 
 		// no entity collisions, so move the ball!
 		pos.x += vel.xVelocity * delta;
@@ -443,6 +462,7 @@ void GameEngine::Game::updatePhysics(const float delta)
 			// reverse the ball direction
 			pos.y -= (vel.yVelocity * 2 * delta);
 			vel.yVelocity *= -1;
+			collidedWithWall = true;
 		}
 
 		// Handle ball hitting top
@@ -450,6 +470,7 @@ void GameEngine::Game::updatePhysics(const float delta)
 		{
 			pos.y -= (vel.yVelocity * 2 * delta);
 			vel.yVelocity *= -1;
+			collidedWithWall = true;
 		}
 
 		// Handle ball hitting sides
@@ -457,6 +478,13 @@ void GameEngine::Game::updatePhysics(const float delta)
 		{
 			pos.x -= (vel.xVelocity * 2 * delta);
 			vel.xVelocity *= -1;
+			collidedWithWall = true;
+		}
+
+
+		if (collidedWithWall&&tooManyBalls)
+		{
+			registry.destroy(bodyEntity);
 		}
 	}
 

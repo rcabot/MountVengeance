@@ -16,7 +16,7 @@ namespace GameEngine {
 		void run();
 		bool armyDefeated();
 		void setupNewGame();
-		void spawnBalls(const int& startingBalls);
+		void progressEnemyBallSpawnTimers();
 		void generateGoblinArmy(const float& sizeX, const float& sizeY, const sf::FloatRect& rect, const float& spacing);
 		void generateGoblinArmy(const float magnitude);
 		void detectWindowClose();
@@ -26,6 +26,8 @@ namespace GameEngine {
 		void removeAllBalls();
 		void updateEnemies();
 		bool villageDestroyed();
+		int getBallShootingEnemyCount();
+		void setCurrentMaxBalls(int amt);
 	private:
 
 		sf::Transform worldTransform;
@@ -36,6 +38,7 @@ namespace GameEngine {
 		const int windowWidth;
 		const int windowHeight;
 		const double SECONDS_PER_UPDATE;
+		int maxBalls;
 
 
 		sf::FloatRect reverseRectUntilNonIntersecting(const Component::FixedSpeedBody& b,

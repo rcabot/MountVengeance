@@ -4,8 +4,10 @@
 
 GameEngine::GameState* GameEngine::RespiteState::update(Game& game)
 {
+
 	game.removeAllBalls();
 	game.generateGoblinArmy(0.0f);
-	game.spawnBalls(1);
+	game.setCurrentMaxBalls(game.getBallShootingEnemyCount());
+	game.progressEnemyBallSpawnTimers();
 	return &GameEngine::defenceState;
 }
