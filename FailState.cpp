@@ -11,7 +11,7 @@ namespace GameEngine{
 		if (sf::Keyboard::isKeyPressed(sf::Keyboard::R)) {
 			//restart!
 			game.setupNewGame();
-			return &GameEngine::defenceState;
+			return &GameEngine::respiteState;
 		}
 		return &GameEngine::failState;
 	}

@@ -30,6 +30,10 @@ void GameEngine::Game::setCurrentMaxBalls(int amt)
 {
 	maxBalls = amt;
 }
+void GameEngine::Game::incrementLevel()
+{
+	level++;
+}
 
 int GameEngine::Game::getBallShootingEnemyCount()
 {
@@ -86,6 +90,8 @@ bool GameEngine::Game::armyDefeated()
 
 void GameEngine::Game::setupNewGame()
 {
+	level = 0;
+	maxBalls = 0;
 	registry.clear();
 	// bat
 	auto bat = Factory::makeBat(registry, windowWidth / 2.0f, windowHeight - 100.0f);
@@ -115,7 +121,7 @@ void GameEngine::Game::progressEnemyBallSpawnTimers()
 	});
 }
 
-void GameEngine::Game::generateGoblinArmy(const float& sizeX, const float& sizeY, const sf::FloatRect& rect, const float& spacing)
+void GameEngine::Game::generateGoblinArmy(const float& sizeX, const float& sizeY, const sf::FloatRect& rect, const float& spacing, const int numberOfBallShooters)
 {
 	const int skipColumnInterval = 2;
 	int columnCount = 0;
@@ -138,7 +144,6 @@ void GameEngine::Game::generateGoblinArmy(const float& sizeX, const float& sizeY
 	
 	auto army = registry.view<Component::Enemy>();
 
-	const int numberOfBallShooters = 2;
 	int ballShootersSpawned = 0;
 
 	for (const auto& enemyEntity : army)
@@ -166,7 +171,7 @@ void GameEngine::Game::generateGoblinArmy(const float magnitude)
 	const float brickendX = windowWidth - bricksSizeX; 
 	const float brickendY = windowHeight / 2.0f;
 	sf::FloatRect goblinArmRect(brickstartX, brickstartY, windowWidth - bricksSizeX * 2.0f, (windowHeight / 2.0f) - bricksSizeY * 2.0f);
-	generateGoblinArmy(bricksSizeX, bricksSizeY, goblinArmRect, spacing);
+	generateGoblinArmy(bricksSizeX, bricksSizeY, goblinArmRect, spacing,level);
 }
 
 void GameEngine::Game::detectWindowClose()
