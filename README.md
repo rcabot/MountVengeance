@@ -8,11 +8,11 @@ This version is a proof of concept and so there are some missing sprites and gra
 
 # How to play
 The golems are attacking the village! 
--- fiery golems will shoot magma projectiles at you, but... 
--- you can reflect them back with your shield (move with arrow keys)
--- reflected projectiles will destroy golems
--- however, they will also destroy your houses, so be careful!
--- you will lose if all the houses are destroyed (press R to reset)
--- golems may also recall their projectiles, and fire them at you again!
--- more and more fire golems will spawn each level, with more projectiles to protect from!
--- how long can you survive?
+* fiery golems will shoot magma projectiles at you, but... 
+* you can reflect them back with your shield (move with arrow keys)
+* reflected projectiles will destroy golems
+* however, they will also destroy your houses, so be careful!
+* you will lose if all the houses are destroyed (press R to reset)
+* golems may also recall their projectiles, and fire them at you again!
+* more and more fire golems will spawn each level, with more projectiles to protect from!
+* how long can you survive?
